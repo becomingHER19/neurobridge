@@ -34,7 +34,7 @@
 <div id="root"></div>
 
 <!-- Replace with your key from console.anthropic.com -->
-<script>window.ANTHROPIC_API_KEY = "YOUR_ANTHROPIC_API_KEY";</script>
+<script>window.GEMINI_API_KEY = "AQ.Ab8RN6IZJc_ddXDenTNRHJsT1C3EUPuKAqwOHKpEx2Xw8geIGA";</script>
 
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useCallback } = React;
@@ -81,26 +81,34 @@ function saveActivity(username, entry){
 
 /* ── AI streaming ── */
 async function streamAI(system, userMsg, onChunk){
-  const r = await fetch("https://api.anthropic.com/v1/messages",{
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=" + window.GEMINI_API_KEY;
+  const r = await fetch(url, {
     method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-api-key": window.ANTHROPIC_API_KEY,
-      "anthropic-version":"2023-06-01",
-      "anthropic-dangerous-direct-browser-access":"true"
-    },
+    headers:{"Content-Type":"application/json"},
     body: JSON.stringify({
-      model:"claude-sonnet-4-6", max_tokens:900,
-      system, messages:[{role:"user",content:userMsg}], stream:true
+      contents:[{role:"user", parts:[{text:userMsg}]}],
+      systemInstruction:{parts:[{text:system}]},
+      generationConfig:{maxOutputTokens:900, temperature:0.8}
     })
   });
   if(!r.ok) throw new Error("API "+r.status);
   const reader=r.body.getReader(), dec=new TextDecoder();
   let full="";
+  let buffer="";
   while(true){
     const{done,value}=await reader.read(); if(done)break;
-    for(const line of dec.decode(value).split("\n").filter(l=>l.startsWith("data:"))){
-      try{const j=JSON.parse(line.slice(5));if(j.delta?.text){full+=j.delta.text;onChunk(full)}}catch{}
+    buffer += dec.decode(value, {stream:true});
+    const lines = buffer.split("\n");
+    buffer = lines.pop(); // keep incomplete line for next chunk
+    for(const line of lines){
+      if(!line.startsWith("data:")) continue;
+      const jsonStr = line.slice(5).trim();
+      if(!jsonStr || jsonStr === "[DONE]") continue;
+      try{
+        const j = JSON.parse(jsonStr);
+        const text = j?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if(text){ full += text; onChunk(full); }
+      }catch{}
     }
   }
   return full;
