@@ -657,7 +657,7 @@ function VoiceReadActivity({user}){
   if(phase==="read")return(<div>
     <div style={{background:C.purpleL,borderRadius:18,padding:"20px",marginBottom:14}}>
       <div style={{fontSize:10,fontWeight:700,color:C.purple,letterSpacing:.8,marginBottom:10}}>📖 READ THIS STORY ALOUD:</div>
-      <div style={{fontSize:19,fontWeight:600,lineHeight:2.1,letterSpacing:"0.02em",wordSpacing:"0.12em"}}>{story}</div>
+      {{fontSize:19,fontWeight:600,lineHeight:2.1,letterSpacing:"0.02em",wordSpacing:"0.12em"}}
     </div>
     <div style={{background:C.doriL,borderRadius:11,padding:"11px 14px",marginBottom:14,fontSize:12,fontWeight:600,color:C.dori}}>💡 Tip: Read slowly and clearly. Read it a few times before recording!</div>
     <VoiceRecorder onResult={handleVoice} color={C.purple}/>
